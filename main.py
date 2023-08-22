@@ -5,7 +5,7 @@ from datetime import datetime,date
 import time
 import json
 
-#====================================================Funciones============================================
+#====================================================Functions============================================
 def ligaToInt(liga):
     if (liga== 'CHALLENGER'):
         return 9
@@ -91,39 +91,27 @@ def bubbleSort(arr):
             break
 
 #====================================================Main prog============================================
-# Ruta del archivo JSON con las credenciales
-credentials_file = '/home/pujasku/Sync/projects/soloPinutTFT/googlekeys.json'
+credentials_file = 'googlekeys.json'
 
-# Alcance de acceso a Google Sheets
 scope = ['https://spreadsheets.google.com/feeds', 'https://www.googleapis.com/auth/drive']
 
-# Carga las credenciales y autentica el cliente
 credentials = ServiceAccountCredentials.from_json_keyfile_name(credentials_file, scope)
 client = gspread.authorize(credentials)
 
-# Abre la hoja de cálculo
 spreadsheet = client.open('SOLOPINUT TFT EDICION 2023')
 worksheet = spreadsheet.sheet1
 
-#columna en la que estan los summoners
 nombres = 1
 filas = worksheet.col_values(nombres)
-#elimino primer elemento
 filas.pop(0)
 
-#declaro un arreglo de jugadores y otras variables
 jugadores = []
-#masCorta = float("inf")
-#masTops = -1
-
 fecha_inicio = date(2023, 6, 22)
 fecha_act = date.today()
 diff_dias = fecha_act - fecha_inicio
 dias = diff_dias.days
 
-#ahora recorro los nicknames y hago las peticiones pertinentes para saber elo y wins de cada uno
 
-# Configura las variables necesarias
 with open("riotApi.json") as file:
     riotApi = json.load(file)
 api_key = riotApi["key"] 
@@ -133,23 +121,19 @@ row = 1
 for i in filas:
     print('>>Solicitando datos de ',i)
     row = row + 1
-    # Nombre de invocador del usuario
     summonerName = i
     player = {}
     player['summoner'] = summonerName
-    # Realiza una solicitud para obtener el id del invocador
     url1 = f'https://{region}.api.riotgames.com/tft/summoner/v1/summoners/by-name/{summonerName}'
     headers = {
         'X-Riot-Token': api_key}
     response1 = requests.get(url1, headers=headers)
 
-    # Verifica si la solicitud fue exitosa
     if response1.status_code == 200:
         print('  >credenciales de summoner obtenidas')
         summoner_data1 = response1.json()
         id = summoner_data1['id']
         puuid = summoner_data1['puuid']
-        #procedo con la siguiente request
         url2 = f'https://{region}.api.riotgames.com/tft/league/v1/entries/by-summoner/{id}'
         headers = {
         'X-Riot-Token': api_key}
@@ -164,15 +148,12 @@ for i in filas:
             else: print('>>No habia informacion sobre ese summoner')
         else:
             print('>>Error al realizar la segunda solicitud:', response2.status_code)
-        #peticion para calcular promedio de games
         url3 = f'https://americas.api.riotgames.com/tft/match/v1/matches/by-puuid/{puuid}/ids?start=0&startTime=1687392000&count=1000'
         response3 = requests.get(url3,headers=headers)
         if response3.status_code == 200:
-            #calculo promedio games jugados
             matches = response3.json()
             player['prom'] = (len(matches)/dias)
             player['games'] = len(matches)
-            #voy a iterar la lista para obtener algunas stats
         else:
             print('>>Error al realizar solicitud de games')
     else:
